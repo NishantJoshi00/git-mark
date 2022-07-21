@@ -1,5 +1,8 @@
 use std::path::Path;
-use std::io::{BufRead};
+use std::io::{BufRead, Write};
+use base64::{encode};
+
+
 pub struct Entry {
     pub name: String,
     file: String,
@@ -42,12 +45,41 @@ pub fn open_database() -> Result<Vec<Entry>, Box<dyn std::error::Error>> {
 
 pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let repo = git2::Repository::discover(Path::new("."))?;
-    // get git diff and save it as a .patch
+    
+    // set working directory to the repository
+    std::env::set_current_dir(repo.workdir().unwrap())?;
+
+    let storage_path = Path::new("./.git-marks/");
+    if !storage_path.exists() {
+        std::fs::create_dir(storage_path)?;
+    }
+    
+    // TODO: Convert the following commands to rust equivalent
+
+    let config = git2::Config::open_default()?;
+    let u_name = config.get_string("user.name")?;
+    let email = config.get_string("user.email")?;
+
+    let patch_name = format!("{}, {}, {}", name, u_name, email);
+    let patch_name = format!("{}.patch", encode(patch_name.as_bytes()));
+    println!("{}", patch_name);
+    
 
 
-    let diff = repo.diff_index_to_workdir(None, None)?;
+    // git add .
+    let cmd = std::process::Command::new("git")
+        .args(["add", "."])
+        .output()?;
+    
+    // git diff --staged -p > .git-marks/
+    let cmd = std::process::Command::new("git")
+        .args(["diff", "--staged", "-p"])
+        .output()?;
+    // write output to file
+    let mut file = std::fs::File::create(storage_path.join(patch_name))?;
+    file.write_all(cmd.stdout.as_slice())?;
+    file.sync_all()?;
 
-    // create a patch file form the diff
     
 
 
