@@ -1,4 +1,4 @@
-use crate::utils::{open_database, create_entry};
+use crate::utils::{open_database, create_entry, set_entry, update_entry};
 
 
 
@@ -25,10 +25,10 @@ pub fn add_mark(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     create_entry(name)
 }
 
-pub fn set_mark(name: &str) {
-    todo!()
+pub fn set_mark(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    set_entry(name)
 }
 
-pub fn update_mark(name: &str) {
-    todo!()
+pub fn update_mark(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    update_entry(name)
 }

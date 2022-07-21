@@ -1,8 +1,9 @@
 use std::path::Path;
 use std::io::{BufRead, Write};
 use base64::{encode};
+use git2::Diff;
 
-
+#[derive(Clone)]
 pub struct Entry {
     pub name: String,
     file: String,
@@ -72,10 +73,18 @@ fn add_database_entry(name: &str, filename: &str, encrypted: bool) -> Result<(),
             encrypted,
         }])?;
     }
-
-
-
     Ok(())
+}
+
+fn delete_database_entry(name: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    let entries = open_database()?;
+    let length = entries.len();
+    let new_entries: Vec<Entry> = entries.into_iter().filter(|entry| entry.name != name).collect();
+    if new_entries.len() == length {
+        return Ok(false);
+    }
+    create_database(new_entries)?;
+    Ok(true)
 }
 
 
@@ -89,6 +98,14 @@ pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     if !storage_path.exists() {
         std::fs::create_dir(storage_path)?;
     }
+
+    let entries = open_database()?;
+    for entry in entries {
+        if entry.name == name {
+            return Err(Box::new(std::io::Error::new(std::io::ErrorKind::AlreadyExists, "Entry already exists")));
+        }
+    }
+
     
     // TODO: Convert the following commands to rust equivalent
 
@@ -105,7 +122,7 @@ pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
 
 
     // git add .
-    let cmd = std::process::Command::new("git")
+    let _cmd = std::process::Command::new("git")
         .args(["add", "."])
         .output()?;
     
@@ -118,10 +135,46 @@ pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     file.write_all(cmd.stdout.as_slice())?;
     
     // git restore --staged .
-    let cmd = std::process::Command::new("git")
+    let _cmd = std::process::Command::new("git")
         .args(["restore", "--staged", "."])
         .output()?;
     
     add_database_entry(name, patch_name.as_str(), false)?;
+    Ok(())
+}
+
+
+pub fn set_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let database = open_database()?;
+    for entry in database {
+        if entry.name == name {
+            // Decryption logic if 
+            if entry.encrypted {
+                todo!()
+            } else {
+                 let repo = git2::Repository::discover(Path::new("."))?;
+
+                std::env::set_current_dir(repo.workdir().unwrap())?;
+                let storage_path = Path::new("./.git-marks/");
+
+                let _cmd = std::process::Command::new("git")
+                    .args(["apply", storage_path.join(entry.file.as_str()).to_str().unwrap()])
+                    .output()?;
+                
+            }
+        }
+    }
+
+
+    Ok(())
+}
+
+pub fn update_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    if delete_database_entry(name)? {
+        create_entry(name)?;
+    } else {
+        return Err(Box::new(std::io::Error::new(std::io::ErrorKind::NotFound, "Mark not found")));
+    }
+
     Ok(())
 }
