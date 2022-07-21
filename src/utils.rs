@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::io::{BufRead, Write};
 use base64::{encode};
-use git2::Diff;
 
 #[derive(Clone)]
 pub struct Entry {
