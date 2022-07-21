@@ -24,6 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "this" => cli::add_mark(args[2].as_str())?,
                 "as" => cli::set_mark(args[2].as_str())?,
                 "update" => cli::update_mark(args[2].as_str())?,
+                "revert" => cli::revert_mark(args[2].as_str())?,
                 _ => cli::print_usage(),
             }
         }

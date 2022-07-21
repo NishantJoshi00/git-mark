@@ -177,3 +177,20 @@ pub fn update_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+pub fn revert_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let entries = open_database()?;
+    for entry in entries {
+        if entry.name == name {
+            let repo = git2::Repository::discover(Path::new("."))?;
+            std::env::set_current_dir(repo.workdir().unwrap())?;
+            let storage_path = Path::new("./.git-marks/");
+            let _cmd = std::process::Command::new("git")
+                .args(["apply", "-R", storage_path.join(entry.file.as_str()).to_str().unwrap()])
+                .output()?;
+            return Ok(());
+        }
+    }
+
+    return Err(Box::new(std::io::Error::new(std::io::ErrorKind::NotFound, "Mark not found")));
+}

@@ -21,10 +21,9 @@ An utility for configuring your git repository for development or any other situ
     - `git mark as <name>`
 - To update the snapshot with current uncommited changes:
     - `git mark update <name>`
-- To revert the snapshot: **⚠ This is not yet implemented.**
+- To revert the snapshot: 
     - `git mark revert <name>`
 
 
 ## Upcoming features
-- Add a `git mark revert` command. To revert the snapshot to the previous state.
 - Encryption to the marks store with AES-256-GCM.

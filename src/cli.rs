@@ -1,4 +1,4 @@
-use crate::utils::{open_database, create_entry, set_entry, update_entry};
+use crate::utils::{open_database, create_entry, set_entry, update_entry, revert_entry};
 
 
 
@@ -10,6 +10,7 @@ pub fn print_usage() {
     println!("  list: list all marks");
     println!("  as <name>: add the changes stored away by (git mark this) command");
     println!("  update <name>: update the changes stored by (git mark this) subcommand");
+    println!("  revert <name>: revert the changes applied by (git mark this) command");
     println!("  help: print this help");
 }
 
@@ -31,4 +32,8 @@ pub fn set_mark(name: &str) -> Result<(), Box<dyn std::error::Error>> {
 
 pub fn update_mark(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     update_entry(name)
+}
+
+pub fn revert_mark(name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    revert_entry(name)
 }
