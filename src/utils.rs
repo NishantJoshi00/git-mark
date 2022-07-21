@@ -42,6 +42,42 @@ pub fn open_database() -> Result<Vec<Entry>, Box<dyn std::error::Error>> {
     }
 }
 
+fn create_database(data: Vec<Entry>) -> Result<(), Box<dyn std::error::Error>> {
+    let repo = git2::Repository::discover(Path::new("."))?;
+    if let Some(repo_dir) = repo.workdir() {
+        let database_path = repo_dir.join(".git-marks/database.dir");
+        let mut file = std::fs::File::create(database_path)?;
+        for entry in data {
+            let line = format!("{} {} {}\n", entry.name, entry.file, entry.encrypted);
+            file.write_all(line.as_bytes())?;
+        }
+    }
+
+    Ok(())
+}
+
+fn add_database_entry(name: &str, filename: &str, encrypted: bool) -> Result<(), Box<dyn std::error::Error>> {
+    if let Ok(entries) = open_database() {
+        let mut entries = entries;
+        entries.push(Entry {
+            name: name.to_string(),
+            file: filename.to_string(),
+            encrypted,
+        });
+        create_database(entries)?;
+    } else {
+        create_database(vec![Entry {
+            name: name.to_string(),
+            file: filename.to_string(),
+            encrypted,
+        }])?;
+    }
+
+
+
+    Ok(())
+}
+
 
 pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let repo = git2::Repository::discover(Path::new("."))?;
@@ -62,8 +98,10 @@ pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     let patch_name = format!("{}, {}, {}", name, u_name, email);
     let patch_name = format!("{}.patch", encode(patch_name.as_bytes()));
-    println!("{}", patch_name);
     
+    if storage_path.join(patch_name.clone()).exists() {
+        return Err(Box::new(std::io::Error::new(std::io::ErrorKind::AlreadyExists, "File already exists")));
+    }
 
 
     // git add .
@@ -76,13 +114,14 @@ pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
         .args(["diff", "--staged", "-p"])
         .output()?;
     // write output to file
-    let mut file = std::fs::File::create(storage_path.join(patch_name))?;
+    let mut file = std::fs::File::create(storage_path.join(patch_name.clone()))?;
     file.write_all(cmd.stdout.as_slice())?;
-    file.sync_all()?;
-
     
-
-
-
+    // git restore --staged .
+    let cmd = std::process::Command::new("git")
+        .args(["restore", "--staged", "."])
+        .output()?;
+    
+    add_database_entry(name, patch_name.as_str(), false)?;
     Ok(())
 }
