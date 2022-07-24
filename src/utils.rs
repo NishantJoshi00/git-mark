@@ -2,7 +2,7 @@ use std::path::Path;
 use std::io::{BufRead, Write};
 use base64::{encode};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Entry {
     pub name: String,
     file: String,
@@ -89,13 +89,14 @@ fn delete_database_entry(name: &str) -> Result<bool, Box<dyn std::error::Error>>
 
 pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let repo = git2::Repository::discover(Path::new("."))?;
-    
+    let path = repo.workdir().unwrap();
     // set working directory to the repository
-    std::env::set_current_dir(repo.workdir().unwrap())?;
+    std::env::set_current_dir(path)?;
 
-    let storage_path = Path::new("./.git-marks/");
+    let storage_path = path.join(Path::new(".git-marks/"));
     if !storage_path.exists() {
-        std::fs::create_dir(storage_path)?;
+        std::fs::create_dir(&storage_path)?;
+        create_database(vec![])?;
     }
 
     let entries = open_database()?;
@@ -122,7 +123,7 @@ pub fn create_entry(name: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     // git add .
     let _cmd = std::process::Command::new("git")
-        .args(["add", "."])
+        .args(["add", ".", ":!.git-marks/"])
         .output()?;
     
     // git diff --staged -p > .git-marks/
