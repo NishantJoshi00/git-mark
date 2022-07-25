@@ -1,10 +1,8 @@
-use crate::utils::{open_database, create_entry, set_entry, update_entry, revert_entry};
-
-
+use crate::utils::{create_entry, open_database, revert_entry, set_entry, update_entry};
 
 pub fn print_usage() {
     println!("git mark <command> [<args>]");
-    println!("");
+    println!();
     println!("Commands:");
     println!("  this <name>: mark the current uncommited changes as <name>");
     println!("  list: list all marks");
